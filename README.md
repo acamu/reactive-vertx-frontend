@@ -397,7 +397,7 @@ The eventBus vertex file
 ## Part Four - Call test service (with postman or something like restClient)
 
     EndPoint : http://localhost:8090/controllpoint
-    Methode : POST
+    Method : POST
     Body : {"id" : 14, "content" : "test content", "validated"  :false, "price" : 134}
 
 
