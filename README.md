@@ -3,7 +3,7 @@
 The aim of the repository is to describe an asynchronous solution from the UI to the BackEnd :
 - Vertx for the microservice (service subscriber and manual service producer)
 - Kafka to manage stream (this is no the subject it is treated briefly)
-- A simple Frontend in HTML with SocksJs websocket subscription
+- A simple Frontend in HTML with SocksJs websocket subscription which is a correlationID to subscribe to a specific channel
 
 
 ## Part One - Manage Kafka Service
@@ -72,11 +72,50 @@ The simple UI is a simple HTML file as describe below
                 <textarea id="feed" rows="4" cols="50" readonly></textarea>
             </div>
         </form>
-
         </body>
-
     </html>
 
+
+the custom JS file realtime-actions.js
+
+    function loadCurrentContent(correlation_id) {
+        var correlation_id = document.getElementById('correlation_id').value;
+        console.log('=>' + correlation_id);
+
+        var xmlhttp = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+        xmlhttp.onreadystatechange = function () {
+            if (xmlhttp.readyState == 4) {
+                if (xmlhttp.status == 200) {
+                    document.getElementById('current_content').innerHTML = 'content ' + JSON.parse(xmlhttp.responseText).content.toString();
+                } else {
+                    document.getElementById('current_content').innerHTML = 'Empty';
+                }
+            }
+        };
+        xmlhttp.open("GET", "http://localhost:8080/api/controllpoints/" + correlation_id);
+        xmlhttp.send();
+    };
+
+    function registerHandlerForUpdateFeed() {
+        var correlation_id = document.getElementById('correlation_id').value;
+        console.log('=>' + correlation_id);
+        document.getElementById('current_correlation_id').innerHTML = correlation_id;
+        var eventBus = new EventBus('http://localhost:8080/eventbus');
+        eventBus.onopen = function () {
+            eventBus.registerHandler('correlationId.' + correlation_id, function (error, message) {
+                //console.log(message.body);
+                var obj = JSON.parse(message.body);
+                var s = JSON.stringify(message.body)
+                document.getElementById('current_content').innerHTML = obj;
+                document.getElementById('feed').value += 'New content: ' + s + '\n';
+            });
+        }
+    };
+
+
+The eventBus vertex file
+
+    To download
 
 
 ## Part Three - Write a Producer and Consumer Vertx Verticles
