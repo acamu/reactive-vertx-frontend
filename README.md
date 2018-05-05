@@ -51,19 +51,14 @@ The simple UI is a simple HTML file as describe below
 
     <script src="https://gist.github.com/acamu/ad65ffddf3f810e9632f5041cb1d9ee0.js"></script>
 
-    <!DOCTYPE html>
     <html>
     <head>
-        <meta charset="utf-8">
-        <title>The asynchronous actions!</title>
-
-        <script src="//cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
+    .....
         <script src="js/vertx-eventbus.js"></script>
         <script src="js/realtime-actions.js"></script>
     </head>
         <body>
-        <h3>action</h3>
-        <div id="error_message"></div>
+       ....
         <form>
             Current Correlation_id:
             <span id="current_correlation_id"></span>
@@ -91,13 +86,11 @@ the custom JS file realtime-actions.js
     
     function loadCurrentContent(correlation_id) {
         var correlation_id = document.getElementById('correlation_id').value;
-        console.log('=>' + correlation_id);
-
         var xmlhttp = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
         xmlhttp.onreadystatechange = function () {
             if (xmlhttp.readyState == 4) {
                 if (xmlhttp.status == 200) {
-                    document.getElementById('current_content').innerHTML = 'content ' + JSON.parse(xmlhttp.responseText).content.toString();
+                    document.getElementById('current_content').innerHTML = 'content ' +                 JSON.parse(xmlhttp.responseText).content.toString();
                 } else {
                     document.getElementById('current_content').innerHTML = 'Empty';
                 }
@@ -134,18 +127,8 @@ The eventBus vertex file
 
 ### MainVerticle class
 
-    package org.acamu.vertx;
-
-    import io.vertx.core.AbstractVerticle;
-    import io.vertx.core.Vertx;
-    import org.acamu.vertx.kafka.KafkaConsumerVerticle;
-    import org.acamu.vertx.kafka.KafkaProducerVerticle;
-    import org.acamu.vertx.rest.UserInterfaceServiceVerticle;
-    import org.slf4j.Logger;
-    import org.slf4j.LoggerFactory;
-
     public class MainVerticle extends AbstractVerticle {
-
+    
         private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
 
         @Override
@@ -173,32 +156,14 @@ The eventBus vertex file
 
 ### Kafka service Consumer
 
-    package org.acamu.vertx.kafka;
-
-    import io.vertx.core.json.Json;
-    import org.acamu.vertx.domain.ControllPoint;
-    import org.apache.kafka.common.serialization.StringDeserializer;
-    import io.vertx.core.AbstractVerticle;
-    import io.vertx.core.Future;
-    import io.vertx.kafka.client.consumer.KafkaReadStream;
-    import org.apache.kafka.clients.consumer.ConsumerConfig;
-    import org.slf4j.Logger;
-    import org.slf4j.LoggerFactory;
-
-    import java.util.Collections;
-    import java.util.Properties;
-
     public class KafkaConsumerVerticle extends AbstractVerticle {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConsumerVerticle.class);
 
-       // private KafkaReadStream<String, String> consumer;
-
         @Override
         public void start(Future<Void> future) {
-
             LOGGER.info("Start Kafka consumer");
-
+            
             final KafkaReadStream<String, String> consumer = createConsumer();
 
             // we are ready w/ deployment
@@ -235,44 +200,18 @@ The eventBus vertex file
                 String jsonEncode = Json.encode(controllPoint);
                 LOGGER.info("send =>:"+jsonEncode);
                 vertx.eventBus().publish("correlationId." + controllPoint.getId(), jsonEncode);
-
             });
-
             return consumer;
         }
     }
 
 ### Kafka service Producer (for the need of the sample)
 
-    package org.acamu.vertx.kafka;
-
-    import io.vertx.core.AbstractVerticle;
-    import io.vertx.core.Future;
-    import io.vertx.core.http.HttpMethod;
-    import io.vertx.core.json.Json;
-    import io.vertx.core.json.JsonObject;
-    import io.vertx.ext.web.Router;
-    import io.vertx.ext.web.handler.BodyHandler;
-    import io.vertx.ext.web.handler.ResponseContentTypeHandler;
-    import io.vertx.kafka.client.producer.KafkaProducer;
-    import io.vertx.kafka.client.producer.KafkaProducerRecord;
-    import io.vertx.kafka.client.producer.RecordMetadata;
-    import io.vertx.kafka.client.serialization.JsonObjectSerializer;
-    import org.acamu.vertx.domain.ControllPoint;
-    import org.apache.kafka.clients.producer.ProducerConfig;
-    import org.apache.kafka.common.serialization.StringSerializer;
-    import org.slf4j.Logger;
-    import org.slf4j.LoggerFactory;
-
-    import java.util.Properties;
-
     //sample producer : {"id":4,"content":"test content","validated":false,"price":134}
     //url to call http://localhost:8090/controllpoint
     public class KafkaProducerVerticle extends AbstractVerticle {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(KafkaProducerVerticle.class);
-
-        //  private KafkaProducer<String, JsonObject> producer;
 
         @Override
         public void start(Future<Void> future) {
@@ -328,28 +267,6 @@ The eventBus vertex file
 
 ### UserInterface service (For the need of the sample)
 
-
-    package org.acamu.vertx.rest;
-
-    import io.vertx.core.AbstractVerticle;
-    import io.vertx.core.eventbus.EventBus;
-    import io.vertx.core.http.HttpMethod;
-    import io.vertx.core.json.Json;
-    import io.vertx.ext.bridge.BridgeEventType;
-    import io.vertx.ext.bridge.PermittedOptions;
-    import io.vertx.ext.web.Router;
-    import io.vertx.ext.web.RoutingContext;
-    import io.vertx.ext.web.handler.BodyHandler;
-    import io.vertx.ext.web.handler.ErrorHandler;
-    import io.vertx.ext.web.handler.StaticHandler;
-    import io.vertx.ext.web.handler.sockjs.BridgeOptions;
-    import io.vertx.ext.web.handler.sockjs.SockJSHandler;
-    import org.slf4j.Logger;
-    import org.slf4j.LoggerFactory;
-
-    import java.util.HashSet;
-    import java.util.Set;
-
     //https://vertx.io/blog/real-time-bidding-with-websockets-and-vert-x/
     public class UserInterfaceServiceVerticle extends AbstractVerticle {
 
@@ -371,18 +288,12 @@ The eventBus vertex file
             allowedHeaders.add("X-PINGARUNER");
 
             Set<HttpMethod> allowedMethods = new HashSet<>();
-          //  allowedMethods.add(HttpMethod.GET);
               allowedMethods.add(HttpMethod.POST);
-          //  allowedMethods.add(HttpMethod.DELETE);
-         //   allowedMethods.add(HttpMethod.PATCH);
-         //   allowedMethods.add(HttpMethod.OPTIONS);
-          //  allowedMethods.add(HttpMethod.PUT);
 
             // * or other like "http://localhost:8080"
             router.route().handler(io.vertx.ext.web.handler.CorsHandler.create("*")
                     .allowedHeaders(allowedHeaders)
                     .allowedMethods(allowedMethods));
-            //.allowCredentials(true));
 
             router.route("/eventbus/*").handler(eventBusHandler());
 
@@ -415,7 +326,7 @@ The eventBus vertex file
 # ==========================================================
 # FAQ
 
-## Websocket API vs SockJS
+## Websocket API vs SockJS (extract ref [1])
 
 Unfortunately, WebSockets are not supported by all web browsers. However, there are libraries that provide a fallback when WebSockets are not available. One such library is **SockJS.** SockJS starts from trying to use the WebSocket protocol. However, if this is not possible, it uses a variety of browser-specific transport protocols. SockJS is a library designed to work in all modern browsers and in environments that do not support WebSocket protocol, for instance behind restrictive corporate proxy. SockJS provides an API similar to the standard WebSocket API.
 
