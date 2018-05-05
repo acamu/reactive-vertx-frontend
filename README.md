@@ -315,6 +315,50 @@ The eventBus vertex file
             });
         }
     }
+    
+### domain 
+
+    public class ControllPoint implements Serializable {
+
+        private long id;
+        private String content;
+        private boolean validated;
+        private BigDecimal price;
+
+        @JsonCreator
+        public ControllPoint(@JsonProperty(value = "id", required = true) long id,
+                             @JsonProperty(value = "content", required = true) String content,
+                             @JsonProperty(value = "validated", required = true) boolean validated,
+                             @JsonProperty(value = "price", required = true) BigDecimal price) {
+            this.id = id;
+            this.content = content;
+            this.validated = validated;
+            this.price = price;
+        }
+
+        public ControllPoint(long id, BigDecimal price) {
+            this.id = id;
+            this.price = price;
+        }
+
+        public ControllPoint(long id) {
+            this(id, BigDecimal.ZERO);
+        }
+
+    ...Getter/Setter
+
+        @Override
+        public String toString() {
+            return "{" +
+                    "\"" + "id:" + "\"" + id + "\"" +
+                    ", " + "\"" + "price:" + price + '\"' +
+                    ", " + "\"" + "validated:" + validated + '\"' +
+                    ", " + "\"" + "content:" + content + '\"' +
+                    "}";
+        }
+    }
+
+
 
 ## Part Four - Call test service (with postman or something like restClient)
 
