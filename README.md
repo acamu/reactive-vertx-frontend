@@ -1,4 +1,4 @@
-# reactive-vertx-frontend
+# reactive-vertx-frontend-backend-stream
 
 The aim of the repository is to describe an asynchronous solution from the UI to the BackEnd :
 - Vertx for the microservice (service subscriber and manual service producer)
