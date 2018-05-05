@@ -121,14 +121,287 @@ The eventBus vertex file
 ## Part Three - Write a Producer and Consumer Vertx Verticles
 
 
+### MainVerticle class
+
+    package org.acamu.vertx;
+
+    import io.vertx.core.AbstractVerticle;
+    import io.vertx.core.Vertx;
+    import org.acamu.vertx.kafka.KafkaConsumerVerticle;
+    import org.acamu.vertx.kafka.KafkaProducerVerticle;
+    import org.acamu.vertx.rest.UserInterfaceServiceVerticle;
+    import org.slf4j.Logger;
+    import org.slf4j.LoggerFactory;
+
+    public class MainVerticle extends AbstractVerticle {
+
+        private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
+
+        @Override
+        public void start() {
+            LOGGER.info("Start of My Main Verticle");
+
+            final Vertx vertx = Vertx.vertx();
+            deployVerticle(KafkaConsumerVerticle.class.getName());
+            deployVerticle(KafkaProducerVerticle.class.getName());
+
+            deployVerticle(UserInterfaceServiceVerticle.class.getName());
+        }
+
+        protected void deployVerticle(String className) {
+            vertx.deployVerticle(className, res -> {
+                if (res.succeeded()) {
+                    System.out.printf("Deployed %s verticle \n", className);
+                } else {
+                    System.out.printf("Error deploying %s verticle:%s \n", className, res.cause());
+                }
+            });
+        }
+    }
 
 
-## Part Four - Call test service (with postman)
+### Kafka service Consumer
+
+    package org.acamu.vertx.kafka;
+
+    import io.vertx.core.json.Json;
+    import org.acamu.vertx.domain.ControllPoint;
+    import org.apache.kafka.common.serialization.StringDeserializer;
+    import io.vertx.core.AbstractVerticle;
+    import io.vertx.core.Future;
+    import io.vertx.kafka.client.consumer.KafkaReadStream;
+    import org.apache.kafka.clients.consumer.ConsumerConfig;
+    import org.slf4j.Logger;
+    import org.slf4j.LoggerFactory;
+
+    import java.util.Collections;
+    import java.util.Properties;
+
+    public class KafkaConsumerVerticle extends AbstractVerticle {
+
+        private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConsumerVerticle.class);
+
+       // private KafkaReadStream<String, String> consumer;
+
+        @Override
+        public void start(Future<Void> future) {
+
+            LOGGER.info("Start Kafka consumer");
+
+            final KafkaReadStream<String, String> consumer = createConsumer();
+
+            // we are ready w/ deployment
+            future.complete();
+        }
+
+        private KafkaReadStream<String, String> createConsumer() {
+            LOGGER.info("Start Kafka consumer");
+
+            Properties config = new Properties();
+            config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+            config.put(ConsumerConfig.GROUP_ID_CONFIG, "mygroup2");
+            config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+            config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+
+            KafkaReadStream<String, String> consumer;
+
+            consumer = KafkaReadStream.create(vertx, config);
+
+            consumer.subscribe(Collections.singleton("websocket_bridge"), ar -> {
+                if (ar.succeeded()) {
+                    LOGGER.info("Subscribed");
+                } else {
+                    LOGGER.error("Could not subscribe: err={}", ar.cause().getMessage());
+                }
+            });
+
+            consumer.handler(record -> {
+                System.out.println("Processing key=" + record.key() + ",value=" + record.value() +
+                        ",partition=" + record.partition() + ",offset=" + record.offset());
+
+                ControllPoint controllPoint = Json.decodeValue(record.value(), ControllPoint.class);
+                LOGGER.info("ControllPoint processed: id={}, price={}", controllPoint.getId(), controllPoint.getPrice());
+                String jsonEncode = Json.encode(controllPoint);
+                LOGGER.info("send =>:"+jsonEncode);
+                vertx.eventBus().publish("correlationId." + controllPoint.getId(), jsonEncode);
+
+            });
+
+            return consumer;
+        }
+    }
+
+### Kafka service Producer (for the need of the sample)
+
+    package org.acamu.vertx.kafka;
+
+    import io.vertx.core.AbstractVerticle;
+    import io.vertx.core.Future;
+    import io.vertx.core.http.HttpMethod;
+    import io.vertx.core.json.Json;
+    import io.vertx.core.json.JsonObject;
+    import io.vertx.ext.web.Router;
+    import io.vertx.ext.web.handler.BodyHandler;
+    import io.vertx.ext.web.handler.ResponseContentTypeHandler;
+    import io.vertx.kafka.client.producer.KafkaProducer;
+    import io.vertx.kafka.client.producer.KafkaProducerRecord;
+    import io.vertx.kafka.client.producer.RecordMetadata;
+    import io.vertx.kafka.client.serialization.JsonObjectSerializer;
+    import org.acamu.vertx.domain.ControllPoint;
+    import org.apache.kafka.clients.producer.ProducerConfig;
+    import org.apache.kafka.common.serialization.StringSerializer;
+    import org.slf4j.Logger;
+    import org.slf4j.LoggerFactory;
+
+    import java.util.Properties;
+
+    //sample producer : {"id":4,"content":"test content","validated":false,"price":134}
+    //url to call http://localhost:8090/controllpoint
+    public class KafkaProducerVerticle extends AbstractVerticle {
+
+        private static final Logger LOGGER = LoggerFactory.getLogger(KafkaProducerVerticle.class);
+
+        //  private KafkaProducer<String, JsonObject> producer;
+
+        @Override
+        public void start(Future<Void> future) {
+
+            LOGGER.info("Start Kafka producer");
+            final KafkaProducer<String, JsonObject> producer = createProducer();
+            /*
+            Create a route to call the sample kafka bean producer
+            And specify the handler which accept call. In this sample only the post method is expected
+             */
+            Router router = Router.router(vertx);
+            router.route("/controllpoint/*").handler(ResponseContentTypeHandler.create());
+            router.route(HttpMethod.POST, "/controllpoint").handler(BodyHandler.create());
+            router.post("/controllpoint").produces("application/json").handler(rc -> {
+
+                //Receive body sample to create specialised bean with specific data
+                LOGGER.info("body received =>"+rc.getBodyAsString());
+                ControllPoint o = Json.decodeValue(rc.getBodyAsString(), ControllPoint.class);
+                KafkaProducerRecord<String, JsonObject> record = KafkaProducerRecord.create("websocket_bridge", null, rc.getBodyAsJson(), 0);
+                producer.write(record, done -> {
+                    if (done.succeeded()) {
+                        RecordMetadata recordMetadata = done.result();
+                        LOGGER.info("Record sent: msg={}, destination={}, partition={}, offset={}", record.value(), recordMetadata.getTopic(), recordMetadata.getPartition(), recordMetadata.getOffset());
+                        o.setId(recordMetadata.getOffset());
+                        o.setContent("PROCESSING");
+                    } else {
+                        Throwable t = done.cause();
+                        LOGGER.error("Error sent to topic: {}", t.getMessage());
+                        o.setContent("REJECTED");
+                    }
+                    rc.response().end(Json.encodePrettily(o));
+                });
+            });
+            vertx.createHttpServer().requestHandler(router::accept).listen(8090);
+
+            // we are ready w/ deployment
+            future.complete();
+        }
+
+        private KafkaProducer<String, JsonObject> createProducer() {
+            LOGGER.info("Start Kafka consumer");
+
+            Properties config = new Properties();
+            config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+            config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+            config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonObjectSerializer.class);
+            config.put(ProducerConfig.ACKS_CONFIG, "1");
+            KafkaProducer producer = KafkaProducer.create(vertx, config);
+
+            return producer;
+        }
+    }
+
+### UserInterface service (For the need of the sample)
 
 
+    package org.acamu.vertx.rest;
+
+    import io.vertx.core.AbstractVerticle;
+    import io.vertx.core.eventbus.EventBus;
+    import io.vertx.core.http.HttpMethod;
+    import io.vertx.core.json.Json;
+    import io.vertx.ext.bridge.BridgeEventType;
+    import io.vertx.ext.bridge.PermittedOptions;
+    import io.vertx.ext.web.Router;
+    import io.vertx.ext.web.RoutingContext;
+    import io.vertx.ext.web.handler.BodyHandler;
+    import io.vertx.ext.web.handler.ErrorHandler;
+    import io.vertx.ext.web.handler.StaticHandler;
+    import io.vertx.ext.web.handler.sockjs.BridgeOptions;
+    import io.vertx.ext.web.handler.sockjs.SockJSHandler;
+    import org.slf4j.Logger;
+    import org.slf4j.LoggerFactory;
+
+    import java.util.HashSet;
+    import java.util.Set;
+
+    //https://vertx.io/blog/real-time-bidding-with-websockets-and-vert-x/
+    public class UserInterfaceServiceVerticle extends AbstractVerticle {
+
+        private static final Logger LOGGER = LoggerFactory.getLogger(UserInterfaceServiceVerticle.class);
+        
+        @Override
+        public void start() {
+            LOGGER.info("Start of My Verticle");
+
+    // add cors allow to localhost:8080 address
+            Router router = Router.router(vertx);
+
+            Set<String> allowedHeaders = new HashSet<>();
+            allowedHeaders.add("x-requested-with");
+            allowedHeaders.add("Access-Control-Allow-Origin");
+            allowedHeaders.add("origin");
+            allowedHeaders.add("Content-Type");
+            allowedHeaders.add("accept");
+            allowedHeaders.add("X-PINGARUNER");
+
+            Set<HttpMethod> allowedMethods = new HashSet<>();
+          //  allowedMethods.add(HttpMethod.GET);
+              allowedMethods.add(HttpMethod.POST);
+          //  allowedMethods.add(HttpMethod.DELETE);
+         //   allowedMethods.add(HttpMethod.PATCH);
+         //   allowedMethods.add(HttpMethod.OPTIONS);
+          //  allowedMethods.add(HttpMethod.PUT);
+
+            // * or other like "http://localhost:8080"
+            router.route().handler(io.vertx.ext.web.handler.CorsHandler.create("*")
+                    .allowedHeaders(allowedHeaders)
+                    .allowedMethods(allowedMethods));
+            //.allowCredentials(true));
+
+            router.route("/eventbus/*").handler(eventBusHandler());
+
+            //router.mountSubRouter("/api", apiRouter());
+            router.route().failureHandler(errorHandler());
+            router.route().handler(staticHandler());
+
+            vertx.createHttpServer().requestHandler(router::accept).listen(8080);
+        }
+
+        private SockJSHandler eventBusHandler() {
+            BridgeOptions options = new BridgeOptions()
+                    .addOutboundPermitted(new PermittedOptions().setAddressRegex("correlationId\\.[0-9]+"));
+            return SockJSHandler.create(vertx).bridge(options, event -> {
+                if (event.type() == BridgeEventType.SOCKET_CREATED) {
+                    LOGGER.info("A socket was created");
+                }
+                event.complete(true);
+            });
+        }
+    }
+
+## Part Four - Call test service (with postman or something like restClient)
+
+    EndPoint : http://localhost:8090/controllpoint
+    Methode : POST
+    Body : {"id" : 14, "content" : "test content", "validated"  :false, "price" : 134}
 
 
-
+# ==========================================================
 # FAQ
 
 ## Websocket API vs SockJS
