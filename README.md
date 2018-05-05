@@ -1,3 +1,10 @@
+---
+title: Vertx-Kafka-UI loop
+template: post.html
+date: 2018-05-05
+author: acamu
+---
+
 # reactive-vertx-frontend-backend-stream
 
 The aim of the repository is to describe an asynchronous solution from the UI to the BackEnd :
