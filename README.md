@@ -5,7 +5,7 @@ date: 2018-05-05
 author: acamu
 ---
 
-# reactive-vertx-frontend-backend-stream
+## Vertx And Kafka - FrontEnd-BackEnd
 
 The aim of the repository is to describe an asynchronous solution from the UI to the BackEnd :
 - Vertx for the microservice (service subscriber and manual service producer)
@@ -49,6 +49,8 @@ For more info please follow the Dzone Guide to start the cluster (Reference [3])
 
 The simple UI is a simple HTML file as describe below
 
+    <script src="https://gist.github.com/acamu/ad65ffddf3f810e9632f5041cb1d9ee0.js"></script>
+
     <!DOCTYPE html>
     <html>
     <head>
@@ -85,6 +87,8 @@ The simple UI is a simple HTML file as describe below
 
 the custom JS file realtime-actions.js
 
+    <script src="https://gist.github.com/acamu/36bd793bacf6b3f49a4eec7ec4f7388d.js"></script>
+    
     function loadCurrentContent(correlation_id) {
         var correlation_id = document.getElementById('correlation_id').value;
         console.log('=>' + correlation_id);
