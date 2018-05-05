@@ -1,9 +1,9 @@
 # reactive-vertx-frontend
 
-The aim of the repository is to describe an asynchronous solution from the UI to the backEnd with the help of:
+The aim of the repository is to describe an asynchronous solution from the UI to the BackEnd :
 - Vertx for the microservice (service subscriber and manual service producer)
 - Kafka to manage stream (this is no the subject it is treated briefly)
-- a simple front in HTML with SocksJs towebsocket subscription
+- A simple Frontend in HTML with SocksJs websocket subscription
 
 
 ## Part One - Manage Kafka Service
@@ -40,7 +40,42 @@ For more info please follow the Dzone Guide to start the cluster (Reference [3])
 
 ## Part Two - Write simple UI to subscribe to a channel
 
+The simple UI is a simple HTML file as describe below
 
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>The asynchronous actions!</title>
+
+        <script src="//cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
+        <script src="js/vertx-eventbus.js"></script>
+        <script src="js/realtime-actions.js"></script>
+    </head>
+        <body>
+        <h3>action</h3>
+        <div id="error_message"></div>
+        <form>
+            Current Correlation_id:
+            <span id="current_correlation_id"></span>
+            <br/>
+            Current content:
+            <span id="current_content"></span>
+            <br/>
+            <div>
+                <label for="correlation_id">Your current correlation_id:</label>
+                <input id="correlation_id" type="text">
+                <input type="button" onclick="registerHandlerForUpdateFeed();" value="Subscribe">
+            </div>
+            <div>
+                Feed:
+                <textarea id="feed" rows="4" cols="50" readonly></textarea>
+            </div>
+        </form>
+
+        </body>
+
+    </html>
 
 
 
