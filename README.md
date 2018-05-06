@@ -5,7 +5,7 @@ date: 2018-05-05
 author: acamu
 ---
 
-## Real-time bidding with Websockets and Vert.x part 2 with Kafka - FrontEnd-BackEnd
+## Real-time bidding with Websockets and Vert.x part 2 - Kafka - FrontEnd-BackEnd
 
 The aim of this post is to describe an asynchronous solution from the UI to the BackEnd with the use of apache Kafka. We are going to show how to subscribe to a channel, order somes actions and wait response. This is the continuation of the post [`Real-time bidding with Websockets and Vert.x`](https://vertx.io/blog/real-time-bidding-with-websockets-and-vert-x/) and pushes further.
 
