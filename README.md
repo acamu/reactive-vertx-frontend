@@ -86,7 +86,7 @@ HTML source code like this :
         </body>
     </html>
 
-I use the **vertx-eventbus.js** library to create a connection to the event bus. **vertx-eventbus.js** library is a part of the Vert.x distribution. And a specific JS file subscribe to a channel **realtime-actions.js**.
+I use the `vertx-eventbus.js` library to create a connection to the event bus. `vertx-eventbus.js` library is a part of the Vert.x distribution. And a specific JS file subscribe to a channel `realtime-actions.js`.
 The user can subscribe as much as channel he wants. It will be notified when a new flow are incomming (the feed field will be updated be the handler).
 Below the code snippet of the **realtime-actions.js**
 
@@ -323,7 +323,7 @@ In my case a created a private method **createConsumer** which has to deal with 
 
 ### Part Five MainVerticle class
 
-First we need to inherit from **AbstractVerticle** and override the start method. The start method will use a protected method **deployVerticle** which has to start verticle and ensure the child Verticle has been started.
+First we need to inherit from [`AbstractVerticle`](http://vertx.io/docs/apidocs/io/vertx/core/AbstractVerticle.html) and override the start method. The start method will use a protected method **deployVerticle** which has to start verticle and ensure the child Verticle has been started.
 
     public class MainVerticle extends AbstractVerticle {
     
