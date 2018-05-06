@@ -7,8 +7,11 @@ author: acamu
 
 ## Vertx And Kafka - FrontEnd-BackEnd
 
-The aim of the repository is to describe an asynchronous solution from the UI to the BackEnd :
-- Vertx for the microservice (service subscriber and manual service producer)
+The aim of this post is to describe an asynchronous solution from the UI to the BackEnd with the use of apache Kafka. We are going to show how to subscribe to a channel, order somes actions and wait response. This is the continuation of the post "Real-time bidding with Websockets and Vert.x" and pushes further.
+
+The project is organize as following:
+
+- Vertx services (Main launcher, kafka subscriber & producer)
 - Kafka to manage stream (this is no the subject it is treated briefly)
 - A simple Frontend in HTML with SocksJs websocket subscription which is a correlationID to subscribe to a specific channel
 
