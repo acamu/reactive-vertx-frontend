@@ -1,9 +1,12 @@
 ---
-title: Vertx-Kafka-UI loop
+title: Real-time bidding with Websockets and Vert.x part 2 - Kafka
 template: post.html
 date: 2018-05-05
 author: acamu
 ---
+
+A simple sample of an full application waiting for injected data into Kafka cluster. This give bullets to built an event application with vertx backEnd services and a simple FrontEnd (which can be easyly replaced by an Angular or something else).
+
 
 ## Real-time bidding with Websockets and Vert.x part 2 - Kafka - FrontEnd-BackEnd
 
