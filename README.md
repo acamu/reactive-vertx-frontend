@@ -113,7 +113,7 @@ In my case i created a private method **createConsumer** which has to deal with 
 
 The consumer handler will read the stream on the topic and decode the flow to read value. It will propagate to the true channel by use of the correlationId provided in the object **"correlationId." + currentId**.
 
-Below the code snippet of the `KafkaVerticleConsumer.java`
+Below the code snippet of the `KafkaConsumerVerticle.java`
 
 #### Kafka service Consumer
 
@@ -165,6 +165,8 @@ Below the code snippet of the `KafkaVerticleConsumer.java`
             return consumer;
         }
     }
+
+Below the code snippet of the `KafkaProducerVerticle.java`
 
 #### Kafka service Producer (for the need of the sample)
 
