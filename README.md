@@ -87,8 +87,6 @@ HTML source code like this :
 I use the `vertx-eventbus.js` library to create a connection to the event bus. `vertx-eventbus.js` library is a part of the Vert.x distribution. And a specific JS file subscribe to a channel `realtime-actions.js`.
 The user can subscribe as much as channel he wants. It will be notified when a new flow are incomming (the feed field will be updated be the handler).
 Below the code snippet of the `realtime-actions.js`
-
-    <script src="https://gist.github.com/acamu/36bd793bacf6b3f49a4eec7ec4f7388d.js"></script>
     
     function registerHandlerForUpdateFeed() {
         var correlation_id = document.getElementById('correlation_id').value;
@@ -110,10 +108,13 @@ Below the code snippet of the `realtime-actions.js`
 ### Part Three - Kafka Producer and Consumer Verticles
 
 There is a lot a things to discuss you can in first going to the doc page "https://vertx.io/docs/vertx-kafka-client/java/"
-I will not go in the detail but we need to inherit from [`AbstractVerticle`](http://vertx.io/docs/apidocs/io/vertx/core/AbstractVerticle.html) and override the start method.
-In my case i created a private method **createConsumer** which has to deal with the creation of the connection stream. I use the default Vertx **StringDeserializer** and subscribe to a topic named  **websocket_bridge**
+I will not go in the detail but we need to inherit as usual from [`AbstractVerticle`](http://vertx.io/docs/apidocs/io/vertx/core/AbstractVerticle.html) and override the start method.
+In my case i created a private method **createConsumer** which has to deal with the creation of the connection stream. I use the default Vertx **StringDeserializer** and subscribe to a topic named  **websocket_bridge**.
+
+The consumer handler will read the stream on the topic and decode the flow to read value. It will propagate to the true channel by use of the correlationId provided in the object **"correlationId." + currentId**.
 
 Below the code snippet of the `KafkaVerticleConsumer.java`
+
 #### Kafka service Consumer
 
     public class KafkaConsumerVerticle extends AbstractVerticle {
@@ -155,11 +156,11 @@ Below the code snippet of the `KafkaVerticleConsumer.java`
                 System.out.println("Processing key=" + record.key() + ",value=" + record.value() +
                         ",partition=" + record.partition() + ",offset=" + record.offset());
 
+                // TODO you can do some stuff here
                 ControllPoint controllPoint = Json.decodeValue(record.value(), ControllPoint.class);
                 LOGGER.info("ControllPoint processed: id={}, price={}", controllPoint.getId(), controllPoint.getPrice());
-                String jsonEncode = Json.encode(controllPoint);
-                LOGGER.info("send =>:"+jsonEncode);
-                vertx.eventBus().publish("correlationId." + controllPoint.getId(), jsonEncode);
+              
+                vertx.eventBus().publish("correlationId." + controllPoint.getId(), record.value());
             });
             return consumer;
         }
@@ -167,8 +168,10 @@ Below the code snippet of the `KafkaVerticleConsumer.java`
 
 #### Kafka service Producer (for the need of the sample)
 
-    //sample producer : {"id":4,"content":"test content","validated":false,"price":134}
-    //url to call http://localhost:8090/controllpoint
+Another Verticle Class we need to inherit as usual from [`AbstractVerticle`](http://vertx.io/docs/apidocs/io/vertx/core/AbstractVerticle.html) and override the start method. Same punishment i wrote a private method to connect to Kafka server **KafkaProducer**.
+
+I need a route to manage incomming call which request a new object creation in the kafka cluster. The object must look like that `{"id":4,"content":"test content","validated":false,"price":134}`  and the route is define as follow `http://localhost:8090/controllpoint` and use the method **POST**.
+
     public class KafkaProducerVerticle extends AbstractVerticle {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(KafkaProducerVerticle.class);
