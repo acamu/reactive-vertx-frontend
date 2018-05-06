@@ -7,11 +7,11 @@ author: acamu
 
 ## Vertx And Kafka - FrontEnd-BackEnd
 
-The aim of this post is to describe an asynchronous solution from the UI to the BackEnd with the use of apache Kafka. We are going to show how to subscribe to a channel, order somes actions and wait response. This is the continuation of the post "Real-time bidding with Websockets and Vert.x" and pushes further.
+The aim of this post is to describe an asynchronous solution from the UI to the BackEnd with the use of apache Kafka. We are going to show how to subscribe to a channel, order somes actions and wait response. This is the continuation of the post [`Real-time bidding with Websockets and Vert.x`](https://vertx.io/blog/real-time-bidding-with-websockets-and-vert-x/) and pushes further.
 
 The project is organize as following:
 
-- Vertx services (Main launcher, UserService)
+- Main Vertx service (Main launcher)
 - Vertx kafka subscriber & producer to manage stream (this is no the subject it is treated briefly)
 - A simple Frontend in HTML with SocksJs websocket subscription which is a correlationID (to subscribe to a specific channel)
 
@@ -86,6 +86,7 @@ HTML source code like this :
 
 I use the `vertx-eventbus.js` library to create a connection to the event bus. `vertx-eventbus.js` library is a part of the Vert.x distribution. And a specific JS file subscribe to a channel `realtime-actions.js`.
 The user can subscribe as much as channel he wants. It will be notified when a new flow are incomming (the feed field will be updated be the handler).
+
 Below the code snippet of the `realtime-actions.js`
     
     function registerHandlerForUpdateFeed() {
@@ -172,7 +173,7 @@ Below the code snippet of the `KafkaProducerVerticle.java`
 
 Another Verticle Class we need to inherit as usual from [`AbstractVerticle`](http://vertx.io/docs/apidocs/io/vertx/core/AbstractVerticle.html) and override the start method. Same punishment i wrote a private method to connect to Kafka server **KafkaProducer**.
 
-I need a route to manage incomming call which request a new object creation in the kafka cluster. The object must look like that `{"id":4,"content":"test content","validated":false,"price":134}`  and the route is define as follow `http://localhost:8090/controllpoint` and use the method **POST**.
+I need a route to manage incomming call which request a new object creation in the kafka cluster the route is defineD as follow `http://localhost:8090/controllpoint` and use the method **POST**. The object must look like that `{"id":4,"content":"test content","validated":false,"price":134}`  
 
     public class KafkaProducerVerticle extends AbstractVerticle {
 
@@ -230,58 +231,7 @@ I need a route to manage incomming call which request a new object creation in t
         }
     }
 
-### Part four - UserInterface service (For the need of the sample)
-
-    //https://vertx.io/blog/real-time-bidding-with-websockets-and-vert-x/
-    public class UserInterfaceServiceVerticle extends AbstractVerticle {
-
-        private static final Logger LOGGER = LoggerFactory.getLogger(UserInterfaceServiceVerticle.class);
-        
-        @Override
-        public void start() {
-            LOGGER.info("Start of My Verticle");
-
-    // add cors allow to localhost:8080 address
-            Router router = Router.router(vertx);
-
-            Set<String> allowedHeaders = new HashSet<>();
-            allowedHeaders.add("x-requested-with");
-            allowedHeaders.add("Access-Control-Allow-Origin");
-            allowedHeaders.add("origin");
-            allowedHeaders.add("Content-Type");
-            allowedHeaders.add("accept");
-            allowedHeaders.add("X-PINGARUNER");
-
-            Set<HttpMethod> allowedMethods = new HashSet<>();
-              allowedMethods.add(HttpMethod.POST);
-
-            // * or other like "http://localhost:8080"
-            router.route().handler(io.vertx.ext.web.handler.CorsHandler.create("*")
-                    .allowedHeaders(allowedHeaders)
-                    .allowedMethods(allowedMethods));
-
-            router.route("/eventbus/*").handler(eventBusHandler());
-
-            //router.mountSubRouter("/api", apiRouter());
-            router.route().failureHandler(errorHandler());
-            router.route().handler(staticHandler());
-
-            vertx.createHttpServer().requestHandler(router::accept).listen(8080);
-        }
-
-        private SockJSHandler eventBusHandler() {
-            BridgeOptions options = new BridgeOptions()
-                    .addOutboundPermitted(new PermittedOptions().setAddressRegex("correlationId\\.[0-9]+"));
-            return SockJSHandler.create(vertx).bridge(options, event -> {
-                if (event.type() == BridgeEventType.SOCKET_CREATED) {
-                    LOGGER.info("A socket was created");
-                }
-                event.complete(true);
-            });
-        }
-    }
-    
-### domain 
+#### Manipulated object - domain 
 
     public class ControllPoint implements Serializable {
 
@@ -323,7 +273,7 @@ I need a route to manage incomming call which request a new object creation in t
         }
     }
 
-### Part Five MainVerticle class
+### Part Four MainVerticle class
 
 First we need to inherit from [`AbstractVerticle`](http://vertx.io/docs/apidocs/io/vertx/core/AbstractVerticle.html) and override the start method. The start method will use a protected method **deployVerticle** which has to start verticle and ensure the child Verticle has been started.
 
@@ -338,8 +288,6 @@ First we need to inherit from [`AbstractVerticle`](http://vertx.io/docs/apidocs/
             final Vertx vertx = Vertx.vertx();
             deployVerticle(KafkaConsumerVerticle.class.getName());
             deployVerticle(KafkaProducerVerticle.class.getName());
-
-            deployVerticle(UserInterfaceServiceVerticle.class.getName());
         }
 
         protected void deployVerticle(String className) {
