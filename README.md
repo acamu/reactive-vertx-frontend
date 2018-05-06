@@ -56,8 +56,6 @@ For more info please follow the Dzone Guide to start the cluster (Reference [3])
 The simple webpage contains one javascript file which subscribe and update the channel with incomming messages.
 HTML source code like this : 
 
-    <script src="https://gist.github.com/acamu/ad65ffddf3f810e9632f5041cb1d9ee0.js"></script>
-
     <html>
     <head>
     .....
@@ -88,7 +86,7 @@ HTML source code like this :
 
 I use the `vertx-eventbus.js` library to create a connection to the event bus. `vertx-eventbus.js` library is a part of the Vert.x distribution. And a specific JS file subscribe to a channel `realtime-actions.js`.
 The user can subscribe as much as channel he wants. It will be notified when a new flow are incomming (the feed field will be updated be the handler).
-Below the code snippet of the **realtime-actions.js**
+Below the code snippet of the `realtime-actions.js`
 
     <script src="https://gist.github.com/acamu/36bd793bacf6b3f49a4eec7ec4f7388d.js"></script>
     
@@ -112,11 +110,10 @@ Below the code snippet of the **realtime-actions.js**
 ### Part Three - Kafka Producer and Consumer Verticles
 
 There is a lot a things to discuss you can in first going to the doc page "https://vertx.io/docs/vertx-kafka-client/java/"
-I will not go in the detail but we need to inherit from **AbstractVerticle** and override the start method.
-In my case a created a private method **createConsumer** which has to deal with the creation of the connection stream. This method register to the kafka stream server. We use the default **Vertx StringDeserializer** and subscribe to a topic **websocket_bridge**
+I will not go in the detail but we need to inherit from [`AbstractVerticle`](http://vertx.io/docs/apidocs/io/vertx/core/AbstractVerticle.html) and override the start method.
+In my case i created a private method **createConsumer** which has to deal with the creation of the connection stream. I use the default Vertx **StringDeserializer** and subscribe to a topic named  **websocket_bridge**
 
-
-
+Below the code snippet of the `KafkaVerticleConsumer.java`
 #### Kafka service Consumer
 
     public class KafkaConsumerVerticle extends AbstractVerticle {
@@ -359,6 +356,9 @@ Full application code is available on [github](https://github.com/acamu/reactive
     EndPoint : http://localhost:8090/controllpoint
     Method : POST
     Body : {"id" : 14, "content" : "test content", "validated"  :false, "price" : 134}
+
+
+![Real time bidding in application](/assets/blog/cccccc/myimage.png "Real time bidding in application")
 
 
 # ==========================================================
