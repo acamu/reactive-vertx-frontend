@@ -11,29 +11,32 @@ The aim of this post is to describe an asynchronous solution from the UI to the 
 
 The project is organize as following:
 
-- Vertx services (Main launcher, kafka subscriber & producer)
-- Kafka to manage stream (this is no the subject it is treated briefly)
-- A simple Frontend in HTML with SocksJs websocket subscription which is a correlationID to subscribe to a specific channel
+- Vertx services (Main launcher, UserService)
+- Vertx kafka subscriber & producer to manage stream (this is no the subject it is treated briefly)
+- A simple Frontend in HTML with SocksJs websocket subscription which is a correlationID (to subscribe to a specific channel)
 
+## Server part
+### Part One - Data bus - Kafka/Zookeeper 
 
-## Part One - Manage Kafka Service
+You have to start kafka/Zookeeper which can be already existing in the SI (Manage event flow).
+There is few method to deploy the stack i will explain most part of them.
 
--How to start kafka & Zookeeper (simple method)
-
+#### Deploy binaries on windows
 Deploy Zookeeper and Kafka binaries into there extraction directory
-Modify CFG file of both
+Modify CFG file of both to use the correct port and directory (e.g: log directory)
 
-start cmd for windows a batch file
+    Launch a Windows batch file
 
     @echo off
-    echo "start Zookeeper"
+    echo "Start Zookeeper"
     start zkServer
-    echo "Kafka"
+    
+    echo "Start Kafka"
     cd "path\kafka\kafka_2.11-1.1.0\bin\windows" 
     Start kafka-server-start.bat path\kafka\kafka_2.11-1.1.0\config\server.properties
 
-
-Or unix style
+#### Deploy binaries on Unix
+    Launch a Unix sh file
 
     #!/bin/bash
     # Script to start Kafka instance
@@ -41,16 +44,17 @@ Or unix style
     bin/kafka-server-start.sh config/server.properties
     
 
-Or docker style :) (very efficient)
+#### Deploy on docker (very efficient : easy to start,  no trace on your computer, etc...)
 
     docker run -p 2181:2181 -p 9092:9092 --env ADVERTISED_HOST=`docker-machine ip \`docker-machine active\`` --env ADVERTISED_PORT=9092 spotify/kafka
 
-For more info please follow the Dzone Guide to start the cluster (Reference [3])
+For more info please follow the Dzone Guide to start the cluster (Reference [3]) on windows
 
 
-## Part Two - Write simple UI to subscribe to a channel
+### Part Two - FrontEnd to subscribe to a specific channel
 
-The simple UI is a simple HTML file as describe below
+The simple webpage contains one javascript file which subscribe and update the channel with incomming messages.
+HTML source code like this : 
 
     <script src="https://gist.github.com/acamu/ad65ffddf3f810e9632f5041cb1d9ee0.js"></script>
 
@@ -82,27 +86,12 @@ The simple UI is a simple HTML file as describe below
         </body>
     </html>
 
-
-the custom JS file realtime-actions.js
+I use the **vertx-eventbus.js** library to create a connection to the event bus. **vertx-eventbus.js** library is a part of the Vert.x distribution. And a specific JS file subscribe to a channel **realtime-actions.js**.
+The user can subscribe as much as channel he wants. It will be notified when a new flow are incomming (the feed field will be updated be the handler).
+Below the code snippet of the **realtime-actions.js**
 
     <script src="https://gist.github.com/acamu/36bd793bacf6b3f49a4eec7ec4f7388d.js"></script>
     
-    function loadCurrentContent(correlation_id) {
-        var correlation_id = document.getElementById('correlation_id').value;
-        var xmlhttp = (window.XMLHttpRequest) ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
-        xmlhttp.onreadystatechange = function () {
-            if (xmlhttp.readyState == 4) {
-                if (xmlhttp.status == 200) {
-                    document.getElementById('current_content').innerHTML = 'content ' +                 JSON.parse(xmlhttp.responseText).content.toString();
-                } else {
-                    document.getElementById('current_content').innerHTML = 'Empty';
-                }
-            }
-        };
-        xmlhttp.open("GET", "http://localhost:8080/api/controllpoints/" + correlation_id);
-        xmlhttp.send();
-    };
-
     function registerHandlerForUpdateFeed() {
         var correlation_id = document.getElementById('correlation_id').value;
         console.log('=>' + correlation_id);
@@ -120,44 +109,15 @@ the custom JS file realtime-actions.js
     };
 
 
-The eventBus vertex file
+### Part Three - Kafka Producer and Consumer Verticles
 
-    To download
-
-
-## Part Three - Write a Producer and Consumer Vertx Verticles
-
-
-### MainVerticle class
-
-    public class MainVerticle extends AbstractVerticle {
-    
-        private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
-
-        @Override
-        public void start() {
-            LOGGER.info("Start of My Main Verticle");
-
-            final Vertx vertx = Vertx.vertx();
-            deployVerticle(KafkaConsumerVerticle.class.getName());
-            deployVerticle(KafkaProducerVerticle.class.getName());
-
-            deployVerticle(UserInterfaceServiceVerticle.class.getName());
-        }
-
-        protected void deployVerticle(String className) {
-            vertx.deployVerticle(className, res -> {
-                if (res.succeeded()) {
-                    System.out.printf("Deployed %s verticle \n", className);
-                } else {
-                    System.out.printf("Error deploying %s verticle:%s \n", className, res.cause());
-                }
-            });
-        }
-    }
+There is a lot a things to discuss you can in first going to the doc page "https://vertx.io/docs/vertx-kafka-client/java/"
+I will not go in the detail but we need to inherit from **AbstractVerticle** and override the start method.
+In my case a created a private method **createConsumer** which has to deal with the creation of the connection stream. This method register to the kafka stream server. We use the default **Vertx StringDeserializer** and subscribe to a topic **websocket_bridge**
 
 
-### Kafka service Consumer
+
+#### Kafka service Consumer
 
     public class KafkaConsumerVerticle extends AbstractVerticle {
 
@@ -208,7 +168,7 @@ The eventBus vertex file
         }
     }
 
-### Kafka service Producer (for the need of the sample)
+#### Kafka service Producer (for the need of the sample)
 
     //sample producer : {"id":4,"content":"test content","validated":false,"price":134}
     //url to call http://localhost:8090/controllpoint
@@ -268,7 +228,7 @@ The eventBus vertex file
         }
     }
 
-### UserInterface service (For the need of the sample)
+### Part four - UserInterface service (For the need of the sample)
 
     //https://vertx.io/blog/real-time-bidding-with-websockets-and-vert-x/
     public class UserInterfaceServiceVerticle extends AbstractVerticle {
@@ -361,9 +321,38 @@ The eventBus vertex file
         }
     }
 
+### Part Five MainVerticle class
+
+First we need to inherit from **AbstractVerticle** and override the start method. The start method will use a protected method **deployVerticle** which has to start verticle and ensure the child Verticle has been started.
+
+    public class MainVerticle extends AbstractVerticle {
+    
+        private static final Logger LOGGER = LoggerFactory.getLogger(MainVerticle.class);
+
+        @Override
+        public void start() {
+            LOGGER.info("Start of My Main Verticle");
+
+            final Vertx vertx = Vertx.vertx();
+            deployVerticle(KafkaConsumerVerticle.class.getName());
+            deployVerticle(KafkaProducerVerticle.class.getName());
+
+            deployVerticle(UserInterfaceServiceVerticle.class.getName());
+        }
+
+        protected void deployVerticle(String className) {
+            vertx.deployVerticle(className, res -> {
+                if (res.succeeded()) {
+                    System.out.printf("Deployed %s verticle \n", className);
+                } else {
+                    System.out.printf("Error deploying %s verticle:%s \n", className, res.cause());
+                }
+            });
+        }
+    }
 
 
-## Part Four - Call test service (with postman or something like restClient)
+## Part Six - Call test service (with postman or something like restClient)
 
     EndPoint : http://localhost:8090/controllpoint
     Method : POST
