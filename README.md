@@ -1,5 +1,5 @@
 ---
-title: Real-time bidding with Websockets and Vert.x part 2 - Kafka
+title: Real-time manage action with Websockets and Vert.x part 2 - Kafka
 template: post.html
 date: 2018-05-05
 author: acamu
@@ -8,7 +8,7 @@ author: acamu
 A simple sample of an full application waiting for injected data into Kafka cluster. This give bullets to built an event application with vertx backEnd services and a simple FrontEnd (which can be easyly replaced by an Angular or something else).
 
 
-## Real-time bidding with Websockets and Vert.x part 2 - Kafka - FrontEnd-BackEnd
+## Real-time manage actions with Websockets and Vert.x part 2 - Kafka - FrontEnd-BackEnd
 
 The aim of this post is to describe an asynchronous solution from the UI to the BackEnd with the use of apache Kafka. We are going to show how to subscribe to a channel, order somes actions and wait response. This is the continuation of the post [`Real-time bidding with Websockets and Vert.x`](https://vertx.io/blog/real-time-bidding-with-websockets-and-vert-x/) and pushes further.
 
