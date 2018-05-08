@@ -1,5 +1,5 @@
 ---
-title: Real-time manage action with Websockets and Vert.x part 2 - Kafka
+title: Real-time manage actions with Websockets and Vert.x part 2 - Kafka
 template: post.html
 date: 2018-05-05
 author: acamu
