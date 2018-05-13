@@ -50,6 +50,12 @@ Modify CFG file of both to use the correct port and directory (e.g: log director
 #### Deploy on docker (very efficient : easy to start,  no trace on your computer, etc...)
 
     docker run -p 2181:2181 -p 9092:9092 --env ADVERTISED_HOST=`docker-machine ip \`docker-machine active\`` --env ADVERTISED_PORT=9092 spotify/kafka
+    
+    or
+    
+    ifconfig and check docker host ip
+    docker run -p 2181:2181 -p 9092:9092 --env ADVERTISED_HOST=your-host-ip --env ADVERTISED_PORT=9092 spotify/kafka
+    
 
 For more info please follow the Dzone Guide to start the cluster (Reference [3]) on windows
 
