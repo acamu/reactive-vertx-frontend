@@ -62,6 +62,13 @@ Modify CFG file of both to use the correct port and directory (e.g: log director
     docker exec -it yourimagesId bash
     the scripts are under this directory : /opt/kafka_2.11-0.10.1.0/bin
 
+Some usefull commands
+
+    Create a topics : ./kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic sample-topic
+    List all existing topics : ./kafka-topics.sh --list --zookeeper localhost:2181
+    Send messages : ./kafka-console-producer.sh --broker-list localhost:9092 --topic sample-topic
+    Start Consumer (your application will be the consumer!) : ./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic sample-topic --from-beginning
+
 For more info please follow the Dzone Guide to start the cluster (Reference [3]) on windows
 
 
