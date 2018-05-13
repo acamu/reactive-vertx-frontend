@@ -21,7 +21,7 @@ The project is organize as following:
 ## Server part
 ### Part One - Data bus - Kafka/Zookeeper 
 
-You have to start kafka/Zookeeper which can be already existing in the SI (Manage event flow).
+You have to start kafka/Zookeeper which can be already existing in your dev environment.
 There is few method to deploy the stack i will explain most part of them.
 
 #### Deploy binaries on windows
