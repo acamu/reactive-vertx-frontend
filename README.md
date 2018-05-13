@@ -56,6 +56,11 @@ Modify CFG file of both to use the correct port and directory (e.g: log director
     ifconfig and check docker host ip
     docker run -p 2181:2181 -p 9092:9092 --env ADVERTISED_HOST=your-host-ip --env ADVERTISED_PORT=9092 spotify/kafka
     
+    
+    if you stop and after start :
+    
+    docker exec -it yourimagesId bash
+    the scripts are under this directory : /opt/kafka_2.11-0.10.1.0/bin
 
 For more info please follow the Dzone Guide to start the cluster (Reference [3]) on windows
 
