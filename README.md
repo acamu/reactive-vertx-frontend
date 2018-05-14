@@ -188,13 +188,14 @@ Below the code snippet of the `KafkaConsumerVerticle.java`
         }
     }
 
-Below the code snippet of the `KafkaProducerVerticle.java`
 
 #### Kafka service Producer (for the need of the sample)
 
 Another Verticle Class we need to inherit as usual from [`AbstractVerticle`](http://vertx.io/docs/apidocs/io/vertx/core/AbstractVerticle.html) and override the start method. Same punishment i wrote a private method to connect to Kafka server **KafkaProducer**.
 
 I need a route to manage incomming call which request a new object creation in the kafka cluster the route is defineD as follow `http://localhost:8090/controllpoint` and use the method **POST**. The object must look like that `{"id":4,"content":"test content","validated":false,"price":134}`  
+
+Below the code snippet of the `KafkaProducerVerticle.java`
 
     public class KafkaProducerVerticle extends AbstractVerticle {
 
@@ -254,6 +255,8 @@ I need a route to manage incomming call which request a new object creation in t
 
 #### Manipulated object - domain 
 
+Below the code snippet of the `ControllPoint.java`
+
     public class ControllPoint implements Serializable {
 
         private long id;
@@ -294,9 +297,9 @@ I need a route to manage incomming call which request a new object creation in t
         }
     }
 
-### Part Four MainVerticle class
+### Part Four - MainVerticle class
 
-First we need to inherit from [`AbstractVerticle`](http://vertx.io/docs/apidocs/io/vertx/core/AbstractVerticle.html) and override the start method. The start method will use a protected method **deployVerticle** which has to start verticle and ensure the child Verticle has been started.
+First we need to inherit from [`AbstractVerticle`](http://vertx.io/docs/apidocs/io/vertx/core/AbstractVerticle.html) and override the start method. The start method will use a private method **deployVerticle** which has to start verticle and ensure the child Verticle has been started.
 
     public class MainVerticle extends AbstractVerticle {
     
@@ -311,7 +314,7 @@ First we need to inherit from [`AbstractVerticle`](http://vertx.io/docs/apidocs/
             deployVerticle(KafkaProducerVerticle.class.getName());
         }
 
-        protected void deployVerticle(String className) {
+        private void deployVerticle(String className) {
             vertx.deployVerticle(className, res -> {
                 if (res.succeeded()) {
                     System.out.printf("Deployed %s verticle \n", className);
@@ -325,11 +328,14 @@ First we need to inherit from [`AbstractVerticle`](http://vertx.io/docs/apidocs/
 
 ## Part Six - Call test service (with postman or something like restClient)
 
-Full application code is available on [github](https://github.com/acamu/reactive-vertx-frontend).
+I tested with restClient on Firefox but you can use 'Postman'
 
     EndPoint : http://localhost:8090/controllpoint
     Method : POST
     Body : {"id" : 14, "content" : "test content", "validated"  :false, "price" : 134}
+
+
+Full application code is available on [github](https://github.com/acamu/reactive-vertx-frontend).
 
 
 ![Real time bidding in application](/assets/blog/cccccc/myimage.png "Real time bidding in application")
@@ -368,6 +374,23 @@ Unfortunately, WebSockets are not supported by all web browsers. However, there 
 
 ## How to subscribe to a specific channel
 
+The better ways is to register on the eventBus a webSocket. But you must take into consideration that you will open as much socket as you register. So you need to manage this in JS. 
+
+    function registerHandlerForUpdateFeed() {
+            var correlation_id = document.getElementById('correlation_id').value;
+            console.log('=>' + correlation_id);
+            document.getElementById('current_correlation_id').innerHTML = correlation_id;
+            var eventBus = new EventBus('http://localhost:8080/eventbus');
+            eventBus.onopen = function () {
+                eventBus.registerHandler('correlationId.' + correlation_id, function (error, message) {
+                    //console.log(message.body);
+                    var obj = JSON.parse(message.body);
+                    var s = JSON.stringify(message.body)
+                    document.getElementById('current_content').innerHTML = obj;
+                    document.getElementById('feed').value += 'New content: ' + s + '\n';
+                });
+            }
+        };
 
 
 # References
